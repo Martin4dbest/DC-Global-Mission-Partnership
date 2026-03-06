@@ -1005,15 +1005,20 @@ def view_my_donations():
 
     return render_template('view_my_donations.html', donation_details=donation_details
 """
-
-
 @app.route("/donate", methods=["GET", "POST"])
 def donate():
-    user = get_current_user() if "user_id" in session else None
+    user = None
+    if "user_id" in session:
+        user = get_current_user()  # Retrieve current logged-in user
+        app.logger.debug(f"User object: {user}")
+        if user:
+            db.session.refresh(user)  # Ensure latest data from DB
 
     if request.method == "POST":
         user_id = session.get("user_id")
         payment_type = request.form.get("payment_type")
+
+        # Offline donation fields
         amount = request.form.get("amount")
         currency = request.form.get("currency")
         donation_date = request.form.get("date_donated")
@@ -1041,21 +1046,34 @@ def donate():
             flash("Invalid date format. Please use YYYY-MM-DD.", "danger")
             return redirect(url_for("donate"))
 
-        # Handle receipt upload safely
+        # Handle receipt upload to S3
         receipt_filename = None
-        if receipt and receipt.filename != "":
-            if allowed_file(receipt.filename):
-                receipt_filename = secure_filename(receipt.filename)
-                s3_key = f"receipts/{user_id}/{receipt_filename}"
-                try:
-                    s3_client.upload_fileobj(receipt, app.config['S3_BUCKET'], s3_key)
-                except Exception as e:
-                    app.logger.error(f"S3 Upload Error: {e}")
-                    flash("Error uploading receipt. Please try again.", "danger")
-                    return redirect(url_for("donate"))
-            else:
-                flash("Invalid file type. Allowed types: PNG, JPG, JPEG, GIF, PDF.", "danger")
+        if receipt and allowed_file(receipt.filename):
+            receipt_filename = secure_filename(receipt.filename)
+            s3_key = f"receipts/{user_id}/{receipt_filename}"
+            try:
+                s3_client.upload_fileobj(
+                    receipt,
+                    app.config['S3_BUCKET'],
+                    s3_key  # ✅ Removed ACL
+                )
+            except Exception as e:
+                app.logger.error(f"S3 Upload Error: {e}")
+                flash("Error uploading receipt. Please try again.", "danger")
                 return redirect(url_for("donate"))
+        elif receipt:
+            flash("Invalid file type. Allowed types: PNG, JPG, JPEG, GIF, PDF.", "danger")
+            return redirect(url_for("donate"))
+
+        # Generate unique reference
+        def generate_unique_reference():
+            while True:
+                reference_code = str(uuid.uuid4())[:10]
+                existing = Donation.query.filter_by(reference=reference_code).first()
+                if not existing:
+                    return reference_code
+
+        reference_code = generate_unique_reference()
 
         # Create donation
         donation = Donation(
@@ -1065,16 +1083,33 @@ def donate():
             donation_date=donation_date,
             payment_type=payment_type,
             receipt_filename=receipt_filename,
-            reference=str(uuid.uuid4())[:10]
+            reference=reference_code
         )
 
         try:
             db.session.add(donation)
             db.session.commit()
+
+            # Update pledge balance if exists
+            pledge = Pledge.query.filter_by(user_id=user_id).first()
+            if pledge:
+                pledged_amount = pledge.amount
+                pledge.balance = max(0, pledged_amount - amount)
+                db.session.commit()
+
             flash(f"Thank you for your {payment_type} donation!", "success")
+            app.logger.info(f"Donation saved: {donation.amount}, User ID: {user_id}, Reference: {reference_code}")
             return redirect(url_for("donation_success"))
+
+        except IntegrityError:
+            db.session.rollback()
+            app.logger.error("Database Integrity Error: Possible duplicate reference.")
+            flash("There was an error processing your donation. Please try again.", "danger")
+            return redirect(url_for("donate"))
+
         except Exception as e:
             db.session.rollback()
+            traceback.print_exc()
             app.logger.error(f"Error saving donation: {e}")
             flash("There was an error processing your donation. Please try again.", "danger")
             return redirect(url_for("donate"))
@@ -1082,7 +1117,6 @@ def donate():
     # GET request
     pledges = db.session.query(Pledge, User).join(User, Pledge.user_id == User.id).all()
     return render_template("donate.html", user=user, pledges=pledges, donation_date=date.today())
-
 
 # Helper to generate a pre-signed URL for private S3 files
 def get_s3_presigned_url(filename, expiration=3600):
@@ -1251,7 +1285,6 @@ def admin_register():
     return render_template('admin_register.html')  # Render the registration form template
                                      
 # Admin login
-from flask_login import login_user
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
@@ -1281,7 +1314,8 @@ def admin_login():
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-            
+
+from flask_login import current_user, login_required                 
 @app.route("/admin_dashboard", methods=["GET", "POST"])
 @admin_required
 def admin_dashboard():
@@ -1445,67 +1479,64 @@ def delete_donation(donation_id):
     return redirect(url_for("recent_donations"))
 
 
-from flask import request, redirect, url_for, render_template, flash, session
-from datetime import datetime
 
 @app.route('/add_pledge', methods=['GET', 'POST'])
 def add_pledge():
-
     if request.method == 'POST':
+        # Handling form submission
+        if request.form:
+            user_id = request.form['user_id']  # Get the user ID from the form
+            pledged_amount = request.form['pledged_amount']
+            pledge_currency = request.form['currency']
+            medal = request.form.get('medal')  # Get the selected medal from the form
+            donation_date_str = request.form['donation_date']  # Get the donation date from the form
 
-        user_id = request.form.get('user_id')
-        pledged_amount = request.form.get('pledged_amount')
-        pledge_currency = request.form.get('currency')
-        medal = request.form.get('medal')
-        donation_date_str = request.form.get('donation_date')
+            # Convert the donation_date to a datetime object
+            try:
+                donation_date = datetime.strptime(donation_date_str, '%Y-%m-%d')
+            except ValueError:
+                flash('Invalid donation date. Please provide a valid date.', 'danger')
+                return redirect(url_for('add_pledge', user_id=user_id))  # Redirect to the form
 
-        # 🔹 Validate donation date
-        try:
-            donation_date = datetime.strptime(donation_date_str, '%Y-%m-%d')
-        except (ValueError, TypeError):
-            flash('Invalid donation date. Please provide a valid date.', 'danger')
-            return redirect(url_for('add_pledge', user_id=user_id))
-
-        # 🔹 Remove commas from pledged amount
-        if pledged_amount:
+            # Remove commas from pledged amount before converting to float
             pledged_amount = pledged_amount.replace(',', '')
 
-        # 🔹 Validate pledged amount
-        try:
-            pledged_amount = float(pledged_amount)
-        except (ValueError, TypeError):
-            flash('Invalid pledged amount. Please enter a valid number.', 'danger')
-            return redirect(url_for('add_pledge', user_id=user_id))
+            try:
+                # Convert pledged amount to float
+                pledged_amount = float(pledged_amount)
+            except ValueError:
+                flash('Invalid pledged amount. Please enter a valid number.', 'danger')
+                return redirect(url_for('add_pledge', user_id=user_id))  # Redirect to the form
 
-        # 🔹 Fetch the user being updated
-        user = User.query.get(user_id)
+            # Fetch the user from the User table
+            user = User.query.get(user_id)
 
-        if not user:
-            flash('User not found!', 'danger')
-            return redirect(url_for('add_pledge', user_id=user_id))
+            if user:
+                # Update the pledged amount, currency, medal, and donation date in the User table
+                user.pledged_amount = pledged_amount
+                user.pledge_currency = pledge_currency
+                user.medal = medal  # Save the selected medal type
+                user.donation_date = donation_date  # Save the donation date
 
-        # 🔹 Update pledge details
-        user.pledged_amount = pledged_amount
-        user.pledge_currency = pledge_currency
-        user.medal = medal
-        user.donation_date = donation_date
+                # Commit the changes to the database
+                db.session.commit()
 
-        db.session.commit()
+                # Check the admin status of the logged-in user and redirect accordingly
+                logged_in_user = User.query.get(session.get('user_id'))  # Assuming user_id is stored in the session
+                if logged_in_user and (logged_in_user.is_admin or logged_in_user.is_super_admin):
+                    flash('Pledge added successfully! You will be redirected to the admin dashboard.', 'success')
+                    return render_template('success.html', next_url=url_for('admin_dashboard'))
+                else:
+                    flash('Pledge added successfully! You will be redirected to the home page.', 'success')
+                    return render_template('success.html', next_url=url_for('home2'))
+            else:
+                flash('User not found!', 'danger')
+                return redirect(url_for('add_pledge', user_id=user_id))  # Redirect in case user not found
 
-        # 🔹 Determine who is logged in
-        logged_in_user = User.query.get(session.get('user_id'))
-
-        flash('Pledge added successfully!', 'success')
-
-        # 🔥 Redirect properly based on role
-        if logged_in_user and (logged_in_user.is_admin or logged_in_user.is_super_admin):
-            return redirect(url_for('admin_dashboard'))
-
-        return redirect(url_for('home2'))
-
-    # 🔹 GET request (Load form)
+    # Add the user_id to the template when rendering the page
     user_id = request.args.get('user_id')
     return render_template('add_pledge.html', user_id=user_id)
+
 
 
 def get_user_by_id(user_id):
@@ -1567,7 +1598,8 @@ def get_current_pledge(user_id):
 
 
 
-@app.route('/view_partners_pledges', methods=['GET', 'POST']) 
+@app.route('/view_partners_pledges', methods=['GET', 'POST'])
+@login_required  
 @admin_required 
 def view_partners_pledges():
     search_query = request.form.get('search_query') if request.method == 'POST' else None
@@ -1588,6 +1620,7 @@ def view_partners_pledges():
 
 
 @app.route('/view_partners_details', methods=['GET', 'POST'])
+@login_required  # Ensure the user is logged in
 @admin_required  # Ensure the user is an admin
 def view_partners_details():
     # Retrieve the search_query from the form if it's a POST request
@@ -1618,6 +1651,7 @@ def view_partners_details():
 
 #View Admin Details
 @app.route('/view_admin_details', methods=['GET', 'POST'])
+@login_required  
 @admin_required
 def view_admin_details():
     # Retrieve the search_country from the form if it's a POST request
@@ -1878,6 +1912,7 @@ def success():
 
 
 @app.route('/edit-profile', methods=['GET', 'POST'])
+@login_required  # Ensure the user is logged in before accessing the profile edit page
 def edit_profile():
     user_id = session.get('user_id')  # Get the user ID from session
     user = User.query.get(user_id)  # Query the user using SQLAlchemy

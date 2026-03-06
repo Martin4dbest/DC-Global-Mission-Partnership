@@ -1,292 +1,358 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DC GLOBAL - ADMIN Dashboard</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DC GLOBAL - Admin Dashboard</title>
 
-    <style>
-        /* Custom Styles */
-        .navbar-brand img {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-        }
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
-        .navbar {
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
+<style>
+body {
+    background: #f4f7fc;
+    font-family: 'Segoe UI', sans-serif;
+}
 
-        .table td,
-        .table th {
-            text-align: center;
-        }
+/* ================= SIDEBAR ================= */
+.sidebar {
+    height: 100vh;
+    width: 260px;
+    position: fixed;
+    background: linear-gradient(180deg,#0a1931,#06101f);
+    color: white;
+    transition: 0.3s ease;
+    padding-top: 25px;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+    overflow-y: auto;
+}
 
-        .carousel-item img {
-            height: 250px;
-            object-fit: cover;
-        }
+.sidebar.collapsed { width: 85px; }
 
-        .content {
-            margin-top: 100px;
-        }
+.sidebar .brand {
+    font-size: 20px;
+    font-weight: 700;
+    padding: 0 25px 20px;
+    color: #4da3ff;
+}
 
-        .search-form {
-            margin-bottom: 30px;
-        }
+.admin-profile {
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 20px;
+    margin-bottom: 15px;
+    text-align: center;
+}
 
-        .search-form input {
-            width: 100%;
-        }
-    </style>
+.profile-icon {
+    color: #4da3ff;
+}
+
+.admin-name {
+    font-size: 15px;
+    color: #ffffff;
+}
+
+.admin-role {
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.sidebar.collapsed .admin-name,
+.sidebar.collapsed .admin-role {
+    display: none;
+}
+
+.sidebar a {
+    display: flex;
+    align-items: center;
+    padding: 14px 25px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.sidebar a i {
+    width: 28px;
+    font-size: 18px;
+}
+
+.sidebar a span { margin-left: 12px; }
+
+.sidebar.collapsed a span { display: none; }
+
+.sidebar a:hover {
+    background: rgba(255,255,255,0.08);
+    border-left: 4px solid white;
+    transform: translateX(4px);
+}
+
+/* Professional Colors */
+.menu-admin-register { color: #4cc9f0; }
+.menu-partner-register { color: #00c896; }
+.menu-donations { color: #f72585; }
+.menu-pledges { color: #ffb703; }
+.menu-partners { color: #3a86ff; }
+.menu-admins { color: #9d4edd; }
+.menu-profile { color: #90be6d; }
+.menu-logout { color: #ef233c; }
+
+/* ================= MAIN ================= */
+.main-content {
+    margin-left: 260px;
+    padding: 30px;
+    transition: 0.3s ease;
+}
+
+.main-content.expanded { margin-left: 85px; }
+
+.toggle-btn {
+    background: #0a1931;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+.card-modern {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
+
+.search-input {
+    border-radius: 30px;
+    padding-left: 20px;
+}
+
+.table thead {
+    background: #0a1931;
+    color: white;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f1f5ff;
+}
+
+.btn-modern {
+    border-radius: 20px;
+    font-size: 12px;
+    padding: 5px 12px;
+}
+
+.btn-approve {
+    background: linear-gradient(45deg,#ffb703,#fb8500);
+    color: white;
+    border: none;
+}
+
+.btn-add {
+    background: linear-gradient(45deg,#00c896,#00a878);
+    color: white;
+    border: none;
+}
+
+.btn-notify {
+    background: linear-gradient(45deg,#4361ee,#3a0ca3);
+    color: white;
+    border: none;
+}
+
+.badge-admin {
+    background: #ffb703;
+    color: #000;
+}
+
+/* MOBILE */
+@media (max-width: 991px) {
+    .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+    }
+    .main-content {
+        margin-left: 0 !important;
+    }
+}
+</style>
 </head>
 
-<body class="bg-light">
+<body>
 
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg fixed-top" style="background: linear-gradient(135deg, #007bff, #0056b3);">
-        <div class="container-fluid">
-            <!-- Logo -->
-            <a class="navbar-brand d-flex align-items-center text-white" href="#">
-                <img src="{{ url_for('static', filename='images/dominion_city.jpeg') }}" alt="Logo"
-                    style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover;">
-                <span class="ms-2 fw-bold" style="color: rgb(255, 225, 54);">Admin</span>
+<!-- ================= SIDEBAR ================= -->
+<div class="sidebar" id="sidebar">
 
-            </a>
+    <div class="brand">
+        <i class="fas fa-shield-alt"></i>
+        <span>DC Admin</span>
+    </div>
 
-            <!-- Toggler Button -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <!-- Navigation Links -->
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <!-- Dropdown Menu -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-white fw-semibold" href="#" id="navbarDropdown" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa fa-cogs" style="color: gold;"></i> <span style="color: white;">Admin Actions</span>
-
-
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('admin_register') }}">
-                                    <i class="fa fa-user-plus me-2 text-primary"></i> Register Admin
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('register') }}">
-                                    <i class="fa fa-user me-2 text-success"></i> Register Partner
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('recent_donations') }}">
-                                    <i class="fa fa-heart me-2 text-danger"></i> Recent Donations
-                                </a>
-                            </li>
-                            
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('admin_uploaded_receipts') }}">
-                                    <i class="fa fa-upload me-2"></i> Uploaded Receipts
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('view_partners_pledges') }}">
-                                    <i class="fa fa-handshake me-2 text-info"></i> Partner Pledges / Onboard Partners
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('view_partners_details') }}">
-                                    <i class="fa fa-address-book me-2"></i> Partners Contacts
-                                </a>
-                            </li>
-                        
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('view_admin_details') }}">
-                                    <i class="fa fa-user-cog me-2 text-warning"></i> Admin Contacts
-                                </a>
-                            </li>
-
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('edit_profile') }}">
-                                    <i class="fa fa-edit me-2 text-primary"></i> Edit Admin Profile
-                                </a>
-                            </li>
-
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('logout') }}">
-                                    <i class="fa fa-sign-out me-2 text-danger"></i> Logout
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+    <!-- Logged In Admin -->
+    <div class="admin-profile px-3">
+        <div class="profile-icon mb-2">
+            <i class="fas fa-user-circle fa-3x"></i>
         </div>
-    </nav>
 
-    <!-- Main Content -->
-    <div class="container mt-5 pt-5 content">
-
-        <!-- Search Form -->
-        <div class="search-form mb-4">
-            <form method="POST" action="{{ url_for('admin_dashboard') }}">
-                <div class="mb-3">
-                    <div class="col-6"> <!-- Adjust the column width to 6 (out of 12, which means 50%) -->
-                        <input type="text" id="search_term" name="search_term" class="form-control" value="{{ search_term or '' }}" placeholder="Search by Name, Country, State, Local Church">
-                    </div>
-                </div>
-                
-                <!-- Adjust the button width -->
-                <button type="submit" class="btn btn-primary" style="width: auto; padding: 10px 20px;">Search</button>
-            </form>
-        </div>
-        
-
-        <!-- Users Table -->
-         <!-- Users Table -->
-<div class="table-responsive">
-    <table class="table table-striped table-bordered">
-        <thead class="table-dark">
-            <tr>
-                <th><strong>Name</strong></th>
-                <th><strong>Email</strong></th>
-                <th><strong>Phone Number</strong></th>
-                <th><strong>Country</strong></th>
-                <th><strong>State</strong></th>
-                <th><strong>Local Church</strong></th>
-                <th><strong>Role</strong></th>
-                <th><strong>Partner Since</strong></th>
-                <th><strong>New Pledge / Pending Approval</strong></th>
-                <th><strong>Actions</strong></th>
-                <th><strong>Send Notification</strong></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td><strong>{{ user.name }}</strong></td>
-                <td><strong>{{ user.email }}</strong></td>
-                <td><strong>{{ user.phone }}</strong></td>
-                <td><strong>{{ user.country }}</strong></td>
-                <td><strong>{{ user.state }}</strong></td>
-                <td><strong>{{ user.church_branch }}</strong></td>
-                <td>
-                    {% if user.is_admin %}
-                    <span class="badge bg-warning text-dark"><strong>Admin</strong></span>
-                    {% else %}
-                    <strong>Partner</strong>
-                    {% endif %}
-                </td>
-                <td><strong>{{ user.partner_since }}</strong></td>
-                <td>
-                    {% if not user.is_admin %}
-                        {% if user.pledged_amount %}
-                        <a href="{{ url_for('update_pledge', user_id=user.id) }}" class="button"
-                            style="background-color: rgb(230, 158, 25); color: white; padding: 4px 8px; font-size: 12px; text-decoration: none; border-radius: 4px; display: inline-block;">
-                            <strong>Approve Pending Pledge</strong>
-                        </a>
-                        {% else %}
-                        <a href="{{ url_for('add_pledge', user_id=user.id) }}" class="button"
-                            style="background-color: green; color: white; padding: 4px 8px; font-size: 12px; text-decoration: none; border-radius: 4px; display: inline-block;">
-                            <strong>Add Pledge</strong>
-                        </a>
-                        {% endif %}
-                    {% endif %}
-                </td>
-                <td class="d-flex gap-2">
-                    {% if not user.is_admin %}
-                    <button class="btn btn-primary btn-sm view-details" data-id="{{ user.id }}"
-                        data-bs-toggle="modal" data-bs-target="#userModal">
-                        <strong>Details</strong>
-                    </button>
-                    {% endif %}
-                    <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" 
-                        onsubmit="return confirm('Delete this user?')">
-                        <button class="btn btn-danger btn-sm"><strong>Delete</strong></button>
-                    </form>
-                </td>
-                <td>
-                    <a href="{{ url_for('mail_sms') }}" class="btn btn-success text-white" 
-                       style="padding: 4px 8px; font-size: 12px; line-height: 1;">
-                       <strong>Notify Partner</strong>
-                    </a>
-                </td>
-            </tr>
+        <div class="admin-name fw-semibold">
+            {% if admin %}
+                {{ admin.name }}
             {% else %}
-            <tr>
-                <td colspan="11" class="text-center"><strong>No users found.</strong></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+                Administrator
+            {% endif %}
+        </div>
 
-
-
-    <!-- User Details Modal -->
-    <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="userModalLabel">User Details</h5>
-                    <!-- Close button that automatically dismisses the modal -->
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="user-modal-content">
-                    Loading...
-                </div>
-            </div>
+        <div class="admin-role">
+            <span class="badge bg-warning text-dark">
+                {% if admin and admin.role %}
+                    {{ admin.role }}
+                {% else %}
+                    Administrator
+                {% endif %}
+            </span>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <a href="{{ url_for('admin_register') }}" class="menu-admin-register">
+        <i class="fas fa-user-plus"></i>
+        <span>Register Admin</span>
+    </a>
 
-    <!-- Optional: Script to fetch user data and display -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const userModal = document.getElementById('userModal');
-            const modalBody = document.getElementById('user-modal-content');
+    <a href="{{ url_for('register') }}" class="menu-partner-register">
+        <i class="fas fa-user"></i>
+        <span>Register Partner</span>
+    </a>
 
-            userModal.addEventListener('show.bs.modal', function (event) {
-                const button = event.relatedTarget;
-                const userId = button.getAttribute('data-id');
-                modalBody.innerHTML = 'Loading...';
+    <a href="{{ url_for('recent_donations') }}" class="menu-donations">
+        <i class="fas fa-heart"></i>
+        <span>Donations</span>
+    </a>
 
-                fetch(`/user/${userId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const role = data.is_admin === true ? 'Admin' : 'Partner';
-                        modalBody.innerHTML = `
-                            <p><strong>Name:</strong> ${data.name}</p>
-                            <p><strong>Email:</strong> ${data.email}</p>
-                            <p><strong>Phone Number:</strong> ${data.phone}</p>
-                            <p><strong>Country:</strong> ${data.country}</p>
-                            <p><strong>State:</strong> ${data.state}</p>
-                            <p><strong>Church:</strong> ${data.church_branch || 'N/A'}</p>
-                            <p><strong>Role:</strong> ${role}</p>
-                        `;
-                    })
-                    .catch(() => {
-                        modalBody.innerHTML = '<p class="text-danger">Failed to load user details.</p>';
-                    });
-            });
-        });
+    <a href="{{ url_for('view_partners_pledges') }}" class="menu-pledges">
+        <i class="fas fa-handshake"></i>
+        <span>Pledges</span>
+    </a>
 
-    </script>
+    <a href="{{ url_for('view_partners_details') }}" class="menu-partners">
+        <i class="fas fa-address-book"></i>
+        <span>Partners</span>
+    </a>
 
+    <a href="{{ url_for('view_admin_details') }}" class="menu-admins">
+        <i class="fas fa-user-cog"></i>
+        <span>Admins</span>
+    </a>
 
+    <a href="{{ url_for('edit_profile') }}" class="menu-profile">
+        <i class="fas fa-edit"></i>
+        <span>Edit Profile</span>
+    </a>
+
+    <a href="{{ url_for('logout') }}" class="menu-logout">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+    </a>
+</div>
+
+<!-- ================= MAIN CONTENT ================= -->
+<div class="main-content" id="mainContent">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <button class="toggle-btn" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <input type="text" id="liveSearch"
+               class="form-control search-input w-50"
+               placeholder="Search partner by name, phone or state...">
+    </div>
+
+    <div class="card card-modern p-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone Number</th> <!-- Added -->
+                        <th>Country</th>
+                        <th>State</th> <!-- Added -->
+                        <th>Role</th>
+                        <th>Partner Since</th>
+                        <th>New Pledge / Pending Approval</th>
+                        <th>Actions</th>
+                        <th>Notification</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td class="fw-semibold">{{ user.name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.phone }}</td> <!-- Added -->
+                        <td>{{ user.country }}</td>
+                        <td>{{ user.state }}</td> <!-- Added -->
+                        <td>
+                            {% if user.is_admin %}
+                                <span class="badge badge-admin">Admin</span>
+                            {% else %}
+                                <span class="badge bg-success">Partner</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.partner_since }}</td>
+
+                        <td>
+                        {% if not user.is_admin %}
+                            {% if user.pledged_amount %}
+                                <a href="{{ url_for('update_pledge', user_id=user.id) }}"
+                                   class="btn btn-modern btn-approve">Approve</a>
+                            {% else %}
+                                <a href="{{ url_for('add_pledge', user_id=user.id) }}"
+                                   class="btn btn-modern btn-add">Add</a>
+                            {% endif %}
+                        {% endif %}
+                        </td>
+
+                        <td>
+                            <form action="{{ url_for('delete_user', user_id=user.id) }}"
+                                  method="POST"
+                                  onsubmit="return confirm('Delete this user?')">
+                                <button class="btn btn-danger btn-modern">Delete</button>
+                            </form>
+                        </td>
+
+                        <td>
+                            {% if not user.is_admin %}
+                            <a href="{{ url_for('mail_sms') }}"
+                               class="btn btn-modern btn-notify">Notify</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+    document.getElementById('mainContent').classList.toggle('expanded');
+}
+
+document.getElementById('liveSearch').addEventListener('keyup', function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#usersTable tbody tr");
+
+    rows.forEach(row => {
+        let text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+    });
+});
+</script>
 
 </body>
-
 </html>

@@ -1,40 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="3;url={{ next_url }}">
-    <title>Pledge Added Successfully</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: rgb(14, 14, 53);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            text-align: center;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            color: #28a745; /* Success color */
-        }
-        p {
-            color: #333;
-        }
-    </style>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="3;url={{ next_url }}">
+
+<title>Success</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
 </head>
-<body>
-    <div class="container">
-        <h1>Thank You!</h1>
-        <p>Your pledge was added successfully.</p>
-        <p>You will be redirected shortly.</p>
-    </div>
+
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#334155] px-4">
+
+<div class="w-full max-w-sm">
+
+<div class="bg-white rounded-2xl shadow-xl p-6 text-center">
+
+<!-- Success Icon -->
+
+<div class="w-14 h-14 mx-auto flex items-center justify-center rounded-full bg-green-100 mb-4">
+
+<svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+
+</svg>
+
+</div>
+
+<!-- Title -->
+
+<h1 class="text-lg font-semibold text-gray-800">
+Thank You!
+</h1>
+
+<!-- Message -->
+
+<p class="text-sm text-gray-600 mt-2">
+Your pledge has been submitted successfully.
+</p>
+
+<p class="text-xs text-gray-400 mt-2">
+Redirecting you shortly...
+</p>
+
+<!-- Loading bar -->
+
+<div class="mt-4 h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+<div class="h-full bg-green-500 animate-pulse"></div>
+</div>
+
+</div>
+
+</div>
+
 </body>
 </html>
