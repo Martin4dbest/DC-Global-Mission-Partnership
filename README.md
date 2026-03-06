@@ -7,7 +7,7 @@ A simple web application to **track donations**, manage donors, and generate rep
 - Add and track donations
 - View donation history
 - Export donation reports (CSV/PDF)
-- Responsive design for desktop and mobile
+- Responsive design for desktop and mobile.
 
 ## Tech Stack
 - Frontend: HTML, CSS, JavaScript, Jinja2
